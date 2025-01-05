@@ -4,12 +4,16 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    port: 5174,
     proxy: {
-      '/v1': {
-        target: 'https://api.siliconflow.cn',
+      '/api': {
+        target: 'http://localhost:3002',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/v1/, '/v1')
+      },
+      '/ws': {
+        target: 'ws://localhost:8188',
+        ws: true,
       }
     }
   }

@@ -41,6 +41,7 @@ const ImageGenerator = () => {
   const [error, setError] = useState(null);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const messagesEndRef = useRef(null);
+  const ws = useRef(null);
 
   const API_KEY = 'sk-ggeucbyvmrziuvoxqzhgwdjdvtlbgaluqsyqpbimuvdqnzgz';
 
@@ -51,6 +52,29 @@ const ImageGenerator = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    ws.current = new WebSocket('ws://localhost:8080');
+    
+    ws.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      switch(data.type) {
+        case 'progress':
+          // 更新生成进度
+          setProgress(data.data);
+          break;
+        case 'complete':
+          // 处理完成的图片
+          setImageUrl(data.imageUrl);
+          break;
+        case 'error':
+          setError(data.error);
+          break;
+      }
+    };
+    
+    return () => ws.current.close();
+  }, []);
 
   const enhancePrompt = async (text) => {
     setIsEnhancing(true);
@@ -101,31 +125,47 @@ const ImageGenerator = () => {
 
   const generateImage = async (prompt) => {
     try {
-      const response = await fetch('https://api.siliconflow.cn/v1/images/generations', {
+      console.log('发送生图请求:', prompt);
+      
+      // 发送生图请求
+      const response = await fetch('/api/prompt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`,
         },
-        body: JSON.stringify({
-          model: "stabilityai/stable-diffusion-xl-base-1.0",
-          prompt: prompt,
-          n: 1,
-          size: "1024x1024",
-          quality: "standard",
-          style: "vivid"
-        })
+        body: JSON.stringify({ prompt })
       });
 
-      if (!response.ok) throw new Error(`API错误: ${response.status}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
 
       const data = await response.json();
-      if (!data.data?.[0]?.url) throw new Error('未收到有效的图像URL');
-      
-      return data.data[0].url;
+      console.log('收到响应:', data);
+
+      // 轮询检查图片生成状态
+      const promptId = data.prompt_id;
+      while (true) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const historyResponse = await fetch(`/api/history/${promptId}`);
+        if (!historyResponse.ok) {
+          throw new Error(`获取历史记录失败: ${historyResponse.status}`);
+        }
+        
+        const historyData = await historyResponse.json();
+        console.log('历史记录:', historyData);
+        
+        if (historyData[promptId]?.outputs?.[9]?.images?.[0]) {
+          const imageName = historyData[promptId].outputs[9].images[0].filename;
+          return `http://127.0.0.1:8188/view?filename=${imageName}`;
+        }
+      }
+
     } catch (err) {
       console.error('生成图像错误:', err);
-      throw err;
+      throw new Error(`生成图像失败: ${err.message}`);
     }
   };
 
