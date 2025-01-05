@@ -1,0 +1,336 @@
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #1a1a1a;
+}
+
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.message {
+  max-width: 80%;
+  margin-bottom: 20px;
+}
+
+.user-message {
+  align-self: flex-end;
+  background-color: #646cff;
+  padding: 12px 20px;
+  border-radius: 20px 20px 0 20px;
+  color: white;
+}
+
+.system-message {
+  align-self: flex-start;
+  background-color: #2a2a2a;
+  padding: 12px 20px;
+  border-radius: 20px 20px 20px 0;
+  color: #e1e1e1;
+}
+
+.image-message {
+  align-self: flex-start;
+  max-width: 100%;
+}
+
+.image-message img {
+  max-width: 100%;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+.prompt-info {
+  background-color: #2a2a2a;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #e1e1e1;
+}
+
+.english-prompt {
+  color: #888;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.error-message {
+  align-self: center;
+  color: #ff4444;
+  background-color: rgba(255, 68, 68, 0.1);
+  padding: 10px 20px;
+  border-radius: 8px;
+}
+
+.input-form {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  background-color: #2a2a2a;
+  border-radius: 10px;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background-color: #1a1a1a;
+  color: #fff;
+  font-size: 16px;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: #646cff;
+}
+
+.send-button {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  background-color: #646cff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.send-button:hover {
+  background-color: #7c82ff;
+}
+
+.send-button:disabled {
+  background-color: #4b4b4b;
+  cursor: not-allowed;
+}
+
+/* 滚动条样式 */
+.messages-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.analysis-message {
+  align-self: flex-start;
+  background-color: #2a2a2a;
+  padding: 20px;
+  border-radius: 10px;
+  margin-top: 20px;
+  width: 100%;
+  color: #e1e1e1;
+}
+
+.analysis-content {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.analysis-content p {
+  margin: 8px 0;
+}
+
+.analysis-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.use-suggestion-button {
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.use-suggestion-button:hover {
+  background-color: #45a049;
+}
+
+.analysis-content h3 {
+  color: #646cff;
+  margin: 16px 0 8px 0;
+  font-size: 16px;
+}
+
+.analysis-content ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.analysis-content li {
+  margin: 4px 0;
+}
+
+.message-wrapper {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.avatar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  padding: 8px;
+  background-color: #2a2a2a;
+  color: #646cff;
+}
+
+.role-name {
+  font-size: 12px;
+  color: #888;
+  white-space: nowrap;
+}
+
+.user-wrapper {
+  flex-direction: row-reverse;
+}
+
+.ai-wrapper,
+.critic-wrapper {
+  flex-direction: row;
+}
+
+.user-message,
+.ai-message,
+.analysis-message {
+  max-width: calc(100% - 80px);
+}
+
+.user-message {
+  background-color: #646cff;
+  padding: 12px 20px;
+  border-radius: 20px 20px 0 20px;
+  color: white;
+}
+
+.ai-message {
+  background-color: #2a2a2a;
+  padding: 12px 20px;
+  border-radius: 20px 20px 20px 0;
+  color: #e1e1e1;
+}
+
+.image-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.image-content img {
+  max-width: 100%;
+  border-radius: 10px;
+}
+
+.analysis-message {
+  background-color: #2a2a2a;
+  padding: 20px;
+  border-radius: 20px 20px 20px 0;
+  color: #e1e1e1;
+}
+
+/* 为不同角色添加特定的样式 */
+.ai-wrapper .prompt-info {
+  background-color: #1a1a1a;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.critic-wrapper .analysis-content {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.critic-wrapper .analysis-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 优化按钮样式 */
+.use-suggestion-button {
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.use-suggestion-button:hover {
+  background-color: #45a049;
+  transform: translateY(-1px);
+}
+
+/* 添加响应式设计 */
+@media (max-width: 768px) {
+  .message-wrapper {
+    gap: 12px;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .role-name {
+    font-size: 10px;
+  }
+
+  .user-message,
+  .ai-message,
+  .analysis-message {
+    max-width: calc(100% - 60px);
+  }
+}
+
+.user-wrapper .avatar {
+  color: #646cff;
+}
+
+.ai-wrapper .avatar {
+  color: #4CAF50;
+}
+
+.critic-wrapper .avatar {
+  color: #ff9800;
+} 
