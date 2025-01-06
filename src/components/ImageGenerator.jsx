@@ -127,13 +127,20 @@ const ImageGenerator = () => {
     try {
       console.log('发送生图请求:', prompt);
       
-      // 发送生图请求
-      const response = await fetch('/api/prompt', {
+      const response = await fetch('https://api.siliconflow.cn/v1/images/generations', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${API_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({
+          model: "stabilityai/stable-diffusion-3-5-large",
+          prompt: prompt,
+          image_size: "1024x1024",
+          batch_size: 1,
+          num_inference_steps: 50,
+          guidance_scale: 7.5
+        })
       });
 
       if (!response.ok) {
@@ -143,25 +150,8 @@ const ImageGenerator = () => {
 
       const data = await response.json();
       console.log('收到响应:', data);
-
-      // 轮询检查图片生成状态
-      const promptId = data.prompt_id;
-      while (true) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const historyResponse = await fetch(`/api/history/${promptId}`);
-        if (!historyResponse.ok) {
-          throw new Error(`获取历史记录失败: ${historyResponse.status}`);
-        }
-        
-        const historyData = await historyResponse.json();
-        console.log('历史记录:', historyData);
-        
-        if (historyData[promptId]?.outputs?.[9]?.images?.[0]) {
-          const imageName = historyData[promptId].outputs[9].images[0].filename;
-          return `http://127.0.0.1:8188/view?filename=${imageName}`;
-        }
-      }
+      
+      return data.images[0].url;
 
     } catch (err) {
       console.error('生成图像错误:', err);
