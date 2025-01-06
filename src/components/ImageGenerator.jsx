@@ -1,399 +1,390 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ImageGenerator.css';
+import { API_KEY } from '../config';
 
-const UserIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="avatar">
-    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+const UserAvatar = () => (
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="32" height="32" rx="16" fill="#0A7CFF"/>
+    <path d="M16 8C13.79 8 12 9.79 12 12C12 14.21 13.79 16 16 16C18.21 16 20 14.21 20 12C20 9.79 18.21 8 16 8ZM16 18C13.33 18 8 19.34 8 22V24H24V22C24 19.34 18.67 18 16 18Z" fill="white"/>
   </svg>
 );
 
-const ArtistIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="avatar">
-    <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-  </svg>
-);
-
-const CriticIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="avatar">
-    <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/>
+const AIAvatar = () => (
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="32" height="32" rx="16" fill="#E5E5EA"/>
+    <path d="M16 8C13.79 8 12 9.79 12 12C12 14.21 13.79 16 16 16C18.21 16 20 14.21 20 12C20 9.79 18.21 8 16 8ZM16 18C13.33 18 8 19.34 8 22V24H24V22C24 19.34 18.67 18 16 18Z" fill="#8E8E93"/>
   </svg>
 );
 
 const ROLES = {
   USER: {
     name: '用户',
-    icon: UserIcon
+    avatar: <UserAvatar />
   },
-  AI: {
+  AI_ARTIST: {
     name: 'AI 画师',
-    icon: ArtistIcon
+    avatar: <AIAvatar />
   },
-  CRITIC: {
-    name: '图像点评官',
-    icon: CriticIcon
+  ART_CRITIC: {
+    name: '艺术评论家',
+    avatar: <AIAvatar />
   }
 };
+
+const generateImage = async (prompt) => {
+  try {
+    console.log('开始生成图片，提示词:', prompt);
+    
+    const response = await fetch('https://api.siliconflow.cn/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "stabilityai/stable-diffusion-3-5-large",
+        prompt: prompt,
+        image_size: "1024x1024",
+        batch_size: 1,
+        num_inference_steps: 50,
+        guidance_scale: 7.5
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`生成图片失败: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    if (!data.images?.[0]?.url) {
+      throw new Error('API 返回数据格式错误');
+    }
+
+    return data.images[0].url;
+  } catch (err) {
+    console.error('生成图片错误:', err);
+    throw err;
+  }
+};
+
+const optimizePrompt = async (originalPrompt) => {
+  try {
+    const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "Qwen/Qwen2-VL-72B-Instruct",
+        messages: [
+          {
+            role: "system",
+            content: "你是一位专业的 AI 绘画提示词专家。请优化用户的中文描述，使其更适合 Stable Diffusion 生成图像。请用英文回复，并解释优化原因。格式如下：\n1. Optimized Prompt: [英文提示词]\n2. Explanation: [中文解释]"
+          },
+          {
+            role: "user",
+            content: `请优化这个提示词用于AI绘画：${originalPrompt}`
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('提示词优化失败:', error);
+    return originalPrompt;
+  }
+};
+
+const analyzeImage = async (imageUrl, prompt) => {
+  try {
+    const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "Qwen/Qwen2-VL-72B-Instruct",
+        messages: [
+          {
+            role: "system",
+            content: `你是一位专业的艺术评论家，请完成以下任务：
+            1. 分析图片：
+               - 构图分析：画面结构、主体位置、视觉重点
+               - 色彩分析：整体色调、色彩搭配、明暗对比
+               - 细节表现：纹理细节、光影效果、空间感
+            
+            2. 提供改进建议：
+               - 基于分析结果，提供一个优化后的英文提示词
+               - 解释为什么这个新提示词会产生更好的结果
+            
+            请用以下格式回复：
+            
+            ## 图片分析
+            [详细分析内容]
+            
+            ## 优化建议
+            新的提示词: [英文提示词]
+            优化说明: [中文解释]`
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "image_url",
+                image_url: {
+                  url: imageUrl,
+                  detail: "high"
+                }
+              },
+              {
+                type: "text",
+                text: "请分析这张图片并提供优化建议。原始提示词是：" + prompt
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('图片分析失败:', error);
+    return "图片分析失败，请稍后重试。";
+  }
+};
+
+// 添加重新生成图标组件
+const RegenerateIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20.453 12.893C19.802 16.744 16.415 19.677 12.207 19.677C7.99903 19.677 4.61203 16.744 3.96103 12.893M3.54703 11.107C4.19803 7.256 7.58503 4.323 11.793 4.323C15.801 4.323 19.072 7.008 19.897 10.599" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round"/>
+    <path d="M20.9951 6.5L19.8481 11.107L15.2411 9.96" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"/>
+  </svg>
+);
 
 const ImageGenerator = () => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [isEnhancing, setIsEnhancing] = useState(false);
-  const messagesEndRef = useRef(null);
-  const ws = useRef(null);
-
-  const API_KEY = 'sk-ggeucbyvmrziuvoxqzhgwdjdvtlbgaluqsyqpbimuvdqnzgz';
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    ws.current = new WebSocket('ws://localhost:8080');
-    
-    ws.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      switch(data.type) {
-        case 'progress':
-          // 更新生成进度
-          setProgress(data.data);
-          break;
-        case 'complete':
-          // 处理完成的图片
-          setImageUrl(data.imageUrl);
-          break;
-        case 'error':
-          setError(data.error);
-          break;
-      }
-    };
-    
-    return () => ws.current.close();
-  }, []);
-
-  const enhancePrompt = async (text) => {
-    setIsEnhancing(true);
-    try {
-      const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "Qwen/Qwen2.5-7B-Instruct",
-          messages: [
-            {
-              role: "system",
-              content: "你是一位专业的AI艺术提示词专家。请将用户的输入转换为优化的英文提示词，使其能生成更好的图像。输出格式为JSON：{\"english\": \"优化后的英文提示词\", \"chinese\": \"中文解释\"}。"
-            },
-            {
-              role: "user",
-              content: `请优化这个提示词：${text}`
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 500
-        })
-      });
-
-      if (!response.ok) throw new Error(`API错误: ${response.status}`);
-      
-      const data = await response.json();
-      let result;
-      try {
-        result = JSON.parse(data.choices[0].message.content);
-      } catch (e) {
-        result = {
-          english: data.choices[0].message.content,
-          chinese: text
-        };
-      }
-      return result;
-    } catch (err) {
-      console.error('提示词优化错误:', err);
-      throw err;
-    } finally {
-      setIsEnhancing(false);
-    }
-  };
-
-  const generateImage = async (prompt) => {
-    try {
-      console.log('发送生图请求:', prompt);
-      
-      const response = await fetch('https://api.siliconflow.cn/v1/images/generations', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: "stabilityai/stable-diffusion-3-5-large",
-          prompt: prompt,
-          image_size: "1024x1024",
-          batch_size: 1,
-          num_inference_steps: 50,
-          guidance_scale: 7.5
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('收到响应:', data);
-      
-      return data.images[0].url;
-
-    } catch (err) {
-      console.error('生成图像错误:', err);
-      throw new Error(`生成图像失败: ${err.message}`);
-    }
-  };
-
-  const analyzeImage = async (imageUrl, originalPrompt) => {
-    try {
-      const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "Pro/Qwen/Qwen2-VL-7B-Instruct",
-          messages: [
-            {
-              role: "system",
-              content: `你是一位极具艺术鉴赏力的高级图像点评官，拥有深厚的视觉艺术、摄影和数字艺术创作背景。请从以下维度对图像进行专业、深入的分析：
-
-1. 构图分析：
-   - 画面结构与平衡
-   - 主体位置与重点突出
-   - 空间层次感
-   - 视线引导与动态感
-
-2. 色彩评估：
-   - 整体色调与氛围
-   - 色彩和谐度与对比
-   - 冷暖色调运用
-   - 饱和度与明度控制
-
-3. 光影效果：
-   - 光源设置与方向
-   - 明暗过渡自然度
-   - 质感表现
-   - 空间氛围营造
-
-4. 细节呈现：
-   - 纹理表现
-   - 材质效果
-   - 边缘处理
-   - 细节丰富度
-
-请按以下格式输出分析：
-1. 整体印象：[简要总结图像的第一印象和突出特点]
-2. 技术分析：[从上述维度进行详细分析]
-3. 优秀之处：[列举2-3个特别出色的方面]
-4. 改进建议：[提供2-3个具体可行的优化方向]
-5. 优化提示词：[基于分析给出优化后的英文提示词建议，包含具体的艺术风格、光影效果、材质细节等关键要素]`
-            },
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: "请分析这张图片的艺术效果，原始提示词是：" + originalPrompt
-                },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: imageUrl
-                  }
-                }
-              ]
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 1000
-        })
-      });
-
-      if (!response.ok) throw new Error(`API错误: ${response.status}`);
-      
-      const data = await response.json();
-      return data.choices[0].message.content;
-    } catch (err) {
-      console.error('图像分析错误:', err);
-      throw err;
-    }
-  };
+  const [currentPrompt, setCurrentPrompt] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || loading) return;
 
-    const userMessage = inputText.trim();
-    setInputText('');
     setLoading(true);
-    setError(null);
-
     try {
       // 添加用户消息
-      setMessages(prev => [...prev, { type: 'user', content: userMessage }]);
-      
+      setMessages(prev => [...prev, {
+        role: ROLES.USER,
+        content: inputText,
+        timestamp: new Date().toISOString()
+      }]);
+
       // 优化提示词
-      setMessages(prev => [...prev, { type: 'system', content: '正在优化提示词...' }]);
-      const enhancedPrompt = await enhancePrompt(userMessage);
-      
-      // 生成图像
-      setMessages(prev => [
-        ...prev.slice(0, -1),
-        { type: 'system', content: '正在生成图像...', promptInfo: enhancedPrompt }
-      ]);
-      const imageUrl = await generateImage(enhancedPrompt.english);
+      setMessages(prev => [...prev, {
+        role: ROLES.AI_ARTIST,
+        content: "正在优化提示词...",
+        thinking: true
+      }]);
 
-      // 添加图像消息
-      setMessages(prev => [
-        ...prev.slice(0, -1),
-        { 
-          type: 'image', 
-          imageUrl: imageUrl,
-          promptInfo: enhancedPrompt
-        }
-      ]);
+      const optimizedPrompt = await optimizePrompt(inputText);
+      setMessages(prev => prev.filter(msg => !msg.thinking).concat({
+        role: ROLES.AI_ARTIST,
+        content: optimizedPrompt,
+        timestamp: new Date().toISOString()
+      }));
 
-      // 分析图像
-      setMessages(prev => [...prev, { type: 'system', content: '正在分析图像...' }]);
-      const analysis = await analyzeImage(imageUrl, enhancedPrompt.english);
+      // 生成图片
+      setMessages(prev => [...prev, {
+        role: ROLES.AI_ARTIST,
+        content: "正在生成图片...",
+        thinking: true
+      }]);
 
-      // 添加分析结果
-      setMessages(prev => [
-        ...prev.slice(0, -1),
-        { 
-          type: 'analysis',
-          content: analysis,
-          imageUrl: imageUrl
-        }
-      ]);
+      const imageUrl = await generateImage(optimizedPrompt.split('\n')[0].replace('Optimized Prompt: ', '').trim());
+      setMessages(prev => prev.filter(msg => !msg.thinking).concat({
+        role: ROLES.AI_ARTIST,
+        imageUrl,
+        timestamp: new Date().toISOString()
+      }));
 
-    } catch (err) {
-      setError(err.message);
-      setMessages(prev => [
-        ...prev.slice(0, -1),
-        { type: 'error', content: `错误: ${err.message}` }
-      ]);
+      // 分析图片
+      setMessages(prev => [...prev, {
+        role: ROLES.ART_CRITIC,
+        content: "正在分析图片...",
+        thinking: true
+      }]);
+
+      const analysis = await analyzeImage(imageUrl, inputText);
+      setMessages(prev => prev.filter(msg => !msg.thinking).concat({
+        role: ROLES.ART_CRITIC,
+        content: analysis,
+        timestamp: new Date().toISOString()
+      }));
+
+    } catch (error) {
+      console.error('处理失败:', error);
+      setMessages(prev => [...prev.filter(msg => !msg.thinking), {
+        role: ROLES.AI_ARTIST,
+        content: `错误: ${error.message}`,
+        error: true,
+        timestamp: new Date().toISOString()
+      }]);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleRegenerate = async (prompt) => {
+    if (loading) return;
+    
+    setLoading(true);
+    try {
+      setMessages(prev => [...prev, {
+        role: ROLES.AI_ARTIST,
+        content: "正在使用优化后的提示词重新生成...",
+        thinking: true
+      }]);
+
+      const imageUrl = await generateImage(prompt);
+      
+      setMessages(prev => prev.filter(msg => !msg.thinking).concat({
+        role: ROLES.AI_ARTIST,
+        imageUrl,
+        timestamp: new Date().toISOString()
+      }));
+
+      // 分析新生成的图片
+      setMessages(prev => [...prev, {
+        role: ROLES.ART_CRITIC,
+        content: "正在分析新生成的图片...",
+        thinking: true
+      }]);
+
+      const analysis = await analyzeImage(imageUrl, prompt);
+      setMessages(prev => prev.filter(msg => !msg.thinking).concat({
+        role: ROLES.ART_CRITIC,
+        content: analysis,
+        timestamp: new Date().toISOString()
+      }));
+
+    } catch (error) {
+      console.error('重新生成失败:', error);
+      setMessages(prev => [...prev.filter(msg => !msg.thinking), {
+        role: ROLES.AI_ARTIST,
+        content: `重新生成失败: ${error.message}`,
+        error: true,
+        timestamp: new Date().toISOString()
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderMessageContent = (message) => {
+    if (message.thinking) {
+      return <div className="thinking">正在思考...</div>;
+    }
+
+    if (message.imageUrl) {
+      return (
+        <div className="image-container">
+          <img 
+            src={message.imageUrl} 
+            alt="Generated" 
+            className="generated-image"
+          />
+        </div>
+      );
+    }
+
+    if (message.role === ROLES.ART_CRITIC) {
+      const sections = message.content.split('##').filter(s => s.trim());
+      return (
+        <div className="analysis-content">
+          {sections.map((section, index) => {
+            const [title, ...content] = section.split('\n').filter(s => s.trim());
+            return (
+              <div key={index} className="analysis-section">
+                <div>{content.join('\n')}</div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return <div>{message.content}</div>;
+  };
+
+  // 添加格式化时间的函数
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  };
+
+  const renderTimestamp = (timestamp) => (
+    <div className="timestamp">{formatTime(timestamp)}</div>
+  );
+
   return (
     <div className="chat-container">
+      <div className="chat-header">
+        <button className="back-button">←</button>
+        <div className="chat-title">AI 图像助手</div>
+        <div style={{width: "24px"}}></div>
+      </div>
+      
       <div className="messages-container">
         {messages.map((message, index) => (
-          <div key={index} className={`message ${message.type}`}>
-            {message.type === 'user' && (
-              <div className="message-wrapper user-wrapper">
-                <div className="avatar-container">
-                  <ROLES.USER.icon />
-                  <span className="role-name">{ROLES.USER.name}</span>
-                </div>
-                <div className="user-message">
-                  <div className="message-content">{message.content}</div>
-                </div>
+          <div 
+            key={index} 
+            className={`message-group ${message.role.name.toLowerCase()}`}
+          >
+            <div className="avatar-container">
+              {message.role.avatar}
+            </div>
+            <div className="message-content">
+              <div className="message-bubble">
+                {renderMessageContent(message)}
               </div>
-            )}
-            
-            {(message.type === 'system' || message.type === 'image') && (
-              <div className="message-wrapper ai-wrapper">
-                <div className="avatar-container">
-                  <ROLES.AI.icon />
-                  <span className="role-name">{ROLES.AI.name}</span>
-                </div>
-                <div className="ai-message">
-                  {message.type === 'system' && (
-                    <div className="message-content">
-                      {message.content}
-                      {message.promptInfo && (
-                        <div className="prompt-info">
-                          <div>优化后的提示词：{message.promptInfo.chinese}</div>
-                          <div className="english-prompt">English: {message.promptInfo.english}</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {message.type === 'image' && (
-                    <div className="image-content">
-                      <div className="prompt-info">
-                        <div>提示词：{message.promptInfo.chinese}</div>
-                        <div className="english-prompt">English: {message.promptInfo.english}</div>
-                      </div>
-                      <img src={message.imageUrl} alt="Generated" />
-                    </div>
-                  )}
-                </div>
+              <div className="message-time">
+                {formatTime(message.timestamp)}
               </div>
-            )}
-            
-            {message.type === 'analysis' && (
-              <div className="message-wrapper critic-wrapper">
-                <div className="avatar-container">
-                  <ROLES.CRITIC.icon />
-                  <span className="role-name">{ROLES.CRITIC.name}</span>
-                </div>
-                <div className="analysis-message">
-                  <div className="analysis-content">
-                    {message.content.split('\n').map((line, i) => (
-                      <p key={i}>{line}</p>
-                    ))}
-                  </div>
-                  <div className="analysis-actions">
-                    <button 
-                      className="use-suggestion-button"
-                      onClick={() => {
-                        const match = message.content.match(/优化提示词：(.*)/);
-                        if (match) {
-                          setInputText(match[1].trim());
-                        }
-                      }}
-                    >
-                      使用优化建议重新生成
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {message.type === 'error' && (
-              <div className="error-message">
-                <div className="message-content">{message.content}</div>
-              </div>
-            )}
+            </div>
           </div>
         ))}
-        <div ref={messagesEndRef} />
       </div>
-
+      
       <form onSubmit={handleSubmit} className="input-form">
         <input
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="输入你的图像描述..."
+          placeholder="输入图片描述..."
           disabled={loading}
           className="chat-input"
         />
         <button 
           type="submit" 
-          disabled={loading || !inputText.trim()}
+          disabled={loading} 
           className="send-button"
         >
           {loading ? '生成中...' : '发送'}

@@ -6,9 +6,13 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
-      '/api': {
-        target: 'http://localhost:3002',
-        changeOrigin: true
+      '/v1': {
+        target: 'https://api.siliconflow.cn',
+        changeOrigin: true,
+        secure: true,
+        headers: {
+          'Origin': 'https://api.siliconflow.cn'
+        }
       }
     }
   }

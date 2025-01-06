@@ -1,0 +1,175 @@
+:root {
+  --primary-color: #0A7CFF;
+  --background-color: #ffffff;
+  --message-bg-user: #0A7CFF;
+  --message-bg-ai: #f1f1f1;
+  --message-color-user: white;
+  --message-color-ai: #000000;
+  --time-color: #8e8e93;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--background-color);
+}
+
+.chat-container {
+  max-width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--background-color);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* 头部导航 */
+.chat-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: white;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.back-button {
+  font-size: 24px;
+  color: var(--primary-color);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.chat-title {
+  flex: 1;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 500;
+  color: #000;
+}
+
+/* 消息容器 */
+.messages-container {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background: white;
+}
+
+/* 消息组 */
+.message-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  max-width: 75%;
+}
+
+/* AI消息靠左 */
+.message-group.ai_artist,
+.message-group.art_critic {
+  align-self: flex-start;
+}
+
+/* 用户消息靠右 */
+.message-group.user {
+  flex-direction: row-reverse;
+  align-self: flex-end;
+}
+
+/* 头像样式 */
+.avatar-container {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* 消息内容区域 */
+.message-content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 消息气泡 */
+.message-bubble {
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 15px;
+  line-height: 1.4;
+  max-width: 100%;
+}
+
+/* 用户消息样式 */
+.user .message-bubble {
+  background: var(--message-bg-user);
+  color: var(--message-color-user);
+  border-bottom-right-radius: 4px;
+}
+
+/* AI消息样式 */
+.ai_artist .message-bubble,
+.art_critic .message-bubble {
+  background: var(--message-bg-ai);
+  color: var(--message-color-ai);
+  border-bottom-left-radius: 4px;
+}
+
+/* 时间戳 */
+.message-time {
+  font-size: 12px;
+  color: var(--time-color);
+  margin-top: 4px;
+}
+
+.user .message-time {
+  text-align: right;
+}
+
+/* 生成的图片样式 */
+.generated-image {
+  max-width: 300px;
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+/* 输入框区域 */
+.input-form {
+  padding: 12px 16px;
+  background: white;
+  border-top: 1px solid #e5e5e5;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.chat-input {
+  flex: 1;
+  border: none;
+  background: #f1f1f1;
+  padding: 12px 16px;
+  border-radius: 20px;
+  font-size: 15px;
+  outline: none;
+}
+
+.send-button {
+  color: var(--primary-color);
+  background: none;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.send-button:disabled {
+  opacity: 0.5;
+}
+
+/* 加载状态 */
+.thinking {
+  color: var(--time-color);
+  font-style: italic;
+  padding: 8px 0;
+} 
