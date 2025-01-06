@@ -1,3 +1,14 @@
+# AI 图像生成器
+
+## 功能特性
+- 使用 SiliconFlow API 生成图片
+- 支持 stable-diffusion-3-5-large 模型
+- 自定义图片尺寸和生成参数
+
+## 配置说明
+1. 创建 `.env` 文件并配置 API Key：.
+
+
 1. 主要组件结构
 ImageGenerator.jsx - 核心组件,包含以下主要功能:
 角色定义:
